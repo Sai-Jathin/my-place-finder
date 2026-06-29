@@ -1,5 +1,3 @@
-const API_KEY = process.env.REACT_APP_GOOGLE_PLACES_KEY;
-
 const categoryToKeyword = {
   Food: "restaurants cafes food",
   Nature: "parks gardens nature lakes",
@@ -28,14 +26,16 @@ function getPriceLabel(level) {
   return labels[level] || "Under ₹1000";
 }
 
+const BASE_URL = process.env.NODE_ENV === "production"
+  ? "https://my-place-finder.vercel.app/api/places"
+  : "http://localhost:3000/api/places";
+
 export async function getPlaceDetails(placeId) {
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews,url,formatted_phone_number,opening_hours&key=${API_KEY}`;
   try {
     const response = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+      `${BASE_URL}?type=details&query=${placeId}`
     );
-    const wrapper = await response.json();
-    const data = JSON.parse(wrapper.contents);
+    const data = await response.json();
     return data.result || null;
   } catch (error) {
     console.error("Error fetching place details:", error);
@@ -46,19 +46,18 @@ export async function getPlaceDetails(placeId) {
 export async function searchPlaces(category, budget, city) {
   const keyword = categoryToKeyword[category] || "places";
   const location = city || "Bengaluru";
-
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(keyword + " in " + location)}&key=${API_KEY}`;
+  const query = keyword + " in " + location;
 
   try {
     const response = await fetch(
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+      `${BASE_URL}?type=search&query=${encodeURIComponent(query)}`
     );
-    const wrapper = await response.json();
-    const data = JSON.parse(wrapper.contents);
+    const data = await response.json();
 
     console.log("Places response:", data);
 
     if (data.results && data.results.length > 0) {
+      const API_KEY = "";
       return data.results.slice(0, 10).map((place) => ({
         name: place.name,
         type: category,
@@ -70,7 +69,7 @@ export async function searchPlaces(category, budget, city) {
         area: place.vicinity || place.formatted_address || location,
         price: getPriceLabel(place.price_level),
         photo: place.photos
-          ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${API_KEY}`
+          ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_KEY}`
           : null,
         placeId: place.place_id,
         mapsUrl: `https://www.google.com/maps/place/?q=place_id:${place.place_id}`,
