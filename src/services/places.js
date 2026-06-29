@@ -57,7 +57,6 @@ export async function searchPlaces(category, budget, city) {
     console.log("Places response:", data);
 
     if (data.results && data.results.length > 0) {
-      const API_KEY = "";
       return data.results.slice(0, 10).map((place) => ({
         name: place.name,
         type: category,
