@@ -32,9 +32,10 @@ export async function getPlaceDetails(placeId) {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews,url,formatted_phone_number,opening_hours&key=${API_KEY}`;
   try {
     const response = await fetch(
-      `https://corsproxy.io/?${encodeURIComponent(url)}`
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
     );
-    const data = await response.json();
+    const wrapper = await response.json();
+    const data = JSON.parse(wrapper.contents);
     return data.result || null;
   } catch (error) {
     console.error("Error fetching place details:", error);
@@ -50,9 +51,12 @@ export async function searchPlaces(category, budget, city) {
 
   try {
     const response = await fetch(
-      `https://corsproxy.io/?${encodeURIComponent(url)}`
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
     );
-    const data = await response.json();
+    const wrapper = await response.json();
+    const data = JSON.parse(wrapper.contents);
+
+    console.log("Places response:", data);
 
     if (data.results && data.results.length > 0) {
       return data.results.slice(0, 10).map((place) => ({
