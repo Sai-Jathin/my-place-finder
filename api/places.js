@@ -10,7 +10,16 @@ export default async function handler(req, res) {
   if (type === "search") {
     url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${API_KEY}`;
   } else if (type === "details") {
-    url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${query}&fields=reviews,url&key=${API_KEY}`;
+    url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${query}&fields=reviews,url,formatted_phone_number,opening_hours&key=${API_KEY}`;
+  } else if (type === "find") {
+    url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,name,photos,geometry&key=${API_KEY}`;
+  } else if (type === "photo") {
+    url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${query}&key=${API_KEY}`;
+    const photoRes = await fetch(url);
+    res.setHeader("Content-Type", "image/jpeg");
+    const buffer = await photoRes.arrayBuffer();
+    res.status(200).send(Buffer.from(buffer));
+    return;
   }
 
   try {

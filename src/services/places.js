@@ -26,9 +26,7 @@ function getPriceLabel(level) {
   return labels[level] || "Under ₹1000";
 }
 
-const BASE_URL = process.env.NODE_ENV === "production"
-  ? "https://my-place-finder.vercel.app/api/places"
-  : "http://localhost:3000/api/places";
+const BASE_URL = "https://my-place-finder.vercel.app/api/places";
 
 export async function getPlaceDetails(placeId) {
   try {
@@ -78,5 +76,32 @@ export async function searchPlaces(category, budget, city) {
   } catch (error) {
     console.error("Error fetching places:", error);
     return [];
+  }
+}
+
+export async function getPlacePhoto(placeName, city = "Bengaluru") {
+  try {
+    const response = await fetch(
+      `${BASE_URL}?type=find&query=${encodeURIComponent(placeName + " " + city)}`
+    );
+    const data = await response.json();
+    if (data.candidates && data.candidates.length > 0) {
+      const place = data.candidates[0];
+      const photoRef = place.photos?.[0]?.photo_reference;
+      const placeId = place.place_id;
+      const lat = place.geometry?.location?.lat;
+      const lng = place.geometry?.location?.lng;
+      return {
+        photoUrl: photoRef ? `${BASE_URL}?type=photo&query=${photoRef}` : null,
+        placeId,
+        lat,
+        lng,
+        mapsUrl: `https://www.google.com/maps/place/?q=place_id:${placeId}`,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching place photo:", error);
+    return null;
   }
 }
