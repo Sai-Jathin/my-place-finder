@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { searchPlaces, getPlaceDetails, getPlacePhoto } from "../services/places";
+import { searchPlaces, getPlaceDetails, getPlacePhoto, getPlacePhotos } from "../services/places";
 
 const glassCard = {
   background: "rgba(255,255,255,0.05)",
@@ -150,6 +150,119 @@ const typeColors = {
   Food: "#EF4444",
   Adventure: "#EF4444",
 };
+
+function PhotoGallery({ place, onClose }) {
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useState(() => {
+    async function fetchPhotos() {
+      const imgs = await getPlacePhotos(place.placeId);
+      setPhotos(imgs);
+      setLoading(false);
+    }
+    fetchPhotos();
+  }, [place.placeId]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.95)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-3xl overflow-hidden"
+        style={{ background: "#0F172A", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "90vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-4 flex items-center justify-between border-b border-white border-opacity-10">
+          <div>
+            <h2 className="text-white font-black text-lg">{place.name}</h2>
+            <p className="text-white opacity-40 text-xs">{photos.length} photos</p>
+          </div>
+          <button onClick={onClose} className="text-white opacity-50 hover:opacity-100 text-xl font-bold">X</button>
+        </div>
+
+        {/* Main Image */}
+        <div className="relative w-full" style={{ height: "280px" }}>
+          {loading ? (
+            <div className="w-full h-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+              <p className="text-white opacity-40">Loading photos...</p>
+            </div>
+          ) : photos.length > 0 ? (
+            <img
+              src={photos[activeIndex]}
+              alt={place.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+              <p className="text-white opacity-40">No photos available</p>
+            </div>
+          )}
+
+          {/* Left / Right arrows */}
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={() => setActiveIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                style={{ background: "rgba(0,0,0,0.6)" }}
+              >
+                ←
+              </button>
+              <button
+                onClick={() => setActiveIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                style={{ background: "rgba(0,0,0,0.6)" }}
+              >
+                →
+              </button>
+              {/* Counter */}
+              <div className="absolute bottom-3 right-3 px-2 py-1 rounded-full text-white text-xs font-bold" style={{ background: "rgba(0,0,0,0.6)" }}>
+                {activeIndex + 1} / {photos.length}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnail strip */}
+        {photos.length > 1 && (
+          <div className="flex gap-2 p-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            {photos.map((photo, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                className="flex-shrink-0 rounded-xl overflow-hidden transition-all"
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  border: index === activeIndex ? "2px solid #2563EB" : "2px solid transparent",
+                  opacity: index === activeIndex ? 1 : 0.6,
+                }}
+              >
+                <img src={photo} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* View on Map button */}
+        <div className="p-4 pt-0">
+          <button
+            onClick={() => window.open(place.mapsUrl, "_blank")}
+            className="w-full py-3 rounded-2xl text-white font-bold text-sm"
+            style={{ background: "linear-gradient(to right, #06B6D4, #0891b2)" }}
+          >
+            View on Map
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ReviewModal({ place, onClose }) {
   const [reviews, setReviews] = useState(null);
@@ -412,7 +525,7 @@ function PlanModal({ plan, onClose }) {
   );
 }
 
-function PlaceCard({ place, isSpinResult, onReview, onSpin }) {
+function PlaceCard({ place, isSpinResult, onReview, onSpin, onGallery }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={glassCard}>
       <div className="px-4 pt-4 pb-1">
@@ -434,9 +547,20 @@ function PlaceCard({ place, isSpinResult, onReview, onSpin }) {
             <button onClick={() => onReview(place)} className="px-4 py-2 rounded-xl text-white text-xs font-bold" style={{ background: blue }}>Reviews</button>
           </div>
         </div>
-        <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-5xl flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>
-          {place.photo ? (<img src={place.photo} alt={place.name} className="w-full h-full object-cover" />) : (<span>{place.emoji}</span>)}
-        </div>
+        <button
+  onClick={() => onGallery(place)}
+  className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-5xl flex-shrink-0 relative group"
+  style={{ background: "rgba(255,255,255,0.08)" }}
+>
+  {place.photo ? (
+    <img src={place.photo} alt={place.name} className="w-full h-full object-cover" />
+  ) : (
+    <span>{place.emoji}</span>
+  )}
+  <div className="absolute inset-0 flex items-center justify-center rounded-2xl opacity-0 group-hover:opacity-100 transition-all" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <span className="text-white text-xs font-bold">Photos</span>
+  </div>
+</button>
       </div>
       {isSpinResult && (
         <div className="px-4 pb-4">
@@ -459,9 +583,18 @@ function Home() {
   const [spinning, setSpinning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reviewPlace, setReviewPlace] = useState(null);
+  const [galleryPlace, setGalleryPlace] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const categories = [{ label: "Nature" }, { label: "Adventure" }, { label: "Food" }, { label: "Heritage" }];
+  const categories = [
+    { label: "Adventure", emoji: "🏕️" },
+    { label: "Nature", emoji: "🌿" },
+    { label: "Spiritual", emoji: "🛕" },
+    { label: "Food", emoji: "🍽️" },
+    { label: "Heritage", emoji: "🏛️" },
+    { label: "Entertainment", emoji: "🎮" },
+    { label: "Experiences", emoji: "🍷" },
+  ];
   const budgets = ["Under 1000", "1000-2500", "2500+"];
   const cities = [
     { name: "Bengaluru", locked: false },
@@ -618,11 +751,16 @@ function Home() {
             <div className="rounded-2xl p-4 mb-3" style={glassCard}>
               <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#06B6D4" }}>Where do you want to go?</p>
               <div className="flex gap-2 flex-wrap">
-                {categories.map((cat) => (
-                  <button key={cat.label} onClick={() => setSelectedCategory(selectedCategory === cat.label ? null : cat.label)} className={selectedCategory === cat.label ? pillActive : pillBase} style={selectedCategory === cat.label ? { background: blue } : {}}>
-                    {cat.label}
-                  </button>
-                ))}
+             {categories.map((cat) => (
+  <button
+    key={cat.label}
+    onClick={() => setSelectedCategory(selectedCategory === cat.label ? null : cat.label)}
+    className={selectedCategory === cat.label ? pillActive : pillBase}
+    style={selectedCategory === cat.label ? { background: blue } : {}}
+  >
+    {cat.emoji} {cat.label}
+  </button>
+))}
               </div>
             </div>
 
@@ -648,7 +786,7 @@ function Home() {
 
             {spinResult && (
               <div className="mb-4">
-                <PlaceCard place={spinResult} isSpinResult={true} onReview={setReviewPlace} onSpin={handleSpin} />
+                <PlaceCard place={spinResult} isSpinResult={true} onReview={setReviewPlace} onSpin={handleSpin}  onGallery={setGalleryPlace} />
               </div>
             )}
 
@@ -676,7 +814,7 @@ function Home() {
                       </div>
                     ) : (
                       <div className="flex flex-col gap-3">
-                        {results.map((place, index) => (<PlaceCard key={index} place={place} isSpinResult={false} onReview={setReviewPlace} onSpin={handleSpin} />))}
+                        {results.map((place, index) => (<PlaceCard key={index} place={place} isSpinResult={false} onReview={setReviewPlace} onSpin={handleSpin} onGallery={setGalleryPlace} />))}
                       </div>
                     )}
                   </div>
@@ -691,6 +829,7 @@ function Home() {
 
       {reviewPlace && (<ReviewModal place={reviewPlace} onClose={() => setReviewPlace(null)} />)}
       {selectedPlan && (<PlanModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />)}
+        {galleryPlace && (<PhotoGallery place={galleryPlace} onClose={() => setGalleryPlace(null)} />)}
     </div>
   );
 }

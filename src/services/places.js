@@ -1,16 +1,22 @@
 const categoryToKeyword = {
-  Food: "restaurants cafes food",
-  Nature: "parks gardens nature lakes",
-  Adventure: "adventure sports trekking outdoor",
-  Heritage: "historical monuments temples heritage",
+  Adventure: "trekking ATV kayaking paragliding go-karting adventure sports",
+  Nature: "parks gardens zoo wildlife sanctuary lakes",
+  Spiritual: "temples churches gurudwara mosque jain temple monastery",
+  Food: "restaurants cafes pubs breweries dhaba street food",
+  Heritage: "historical monuments museums art galleries forts palaces",
+  Entertainment: "gaming arcade bowling VR escape room entertainment",
+  Experiences: "wine tour farm stay play arena unique experiences",
 };
 
 function getCategoryEmoji(category) {
   const emojis = {
-    Food: "🍽️",
-    Nature: "🌿",
     Adventure: "🏕️",
+    Nature: "🌿",
+    Spiritual: "🛕",
+    Food: "🍽️",
     Heritage: "🏛️",
+    Entertainment: "🎮",
+    Experiences: "🍷",
   };
   return emojis[category] || "📍";
 }
@@ -70,7 +76,7 @@ export async function searchPlaces(category, budget, city) {
           : null,
         placeId: place.place_id,
         mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}`,
-        
+
       }));
     }
     return [];
@@ -104,5 +110,22 @@ return {
   } catch (error) {
     console.error("Error fetching place photo:", error);
     return null;
+  }
+}
+export async function getPlacePhotos(placeId) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}?type=photos&query=${placeId}`
+    );
+    const data = await response.json();
+    if (data.result?.photos) {
+      return data.result.photos.slice(0, 10).map((photo) =>
+        `${BASE_URL}?type=photo&query=${photo.photo_reference}`
+      );
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+    return [];
   }
 }
