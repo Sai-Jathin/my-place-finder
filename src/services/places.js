@@ -69,7 +69,8 @@ export async function searchPlaces(category, budget, city) {
           ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_KEY}`
           : null,
         placeId: place.place_id,
-        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName)}&query_place_id=${placeId}`,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}`,
+        
       }));
     }
     return [];
