@@ -7,9 +7,9 @@ const cities = [
     label: "Bengaluru",
     tagline: "Silicon Valley of India",
     images: [
-      "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=2000&q=90&fm=jpg&fit=crop",
-      "https://images.unsplash.com/photo-1572879023364-ab4f53e9d5fa?w=2000&q=90&fm=jpg&fit=crop",
-      "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=2000&q=90&fm=jpg&fit=crop",
+      "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=2600&q=95&fit=crop&dpr=2&auto=format",
+      "https://images.unsplash.com/photo-1572879023364-ab4f53e9d5fa?w=2600&q=95&fit=crop&dpr=2&auto=format",
+      "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=2600&q=95&fit=crop&dpr=2&auto=format",
     ],
     locked: false,
   },
@@ -18,8 +18,8 @@ const cities = [
     label: "Chennai",
     tagline: "Gateway of South India",
     images: [
-      "https://images.unsplash.com/photo-1582651957983-56e9d6062e1c?w=2000&q=90&fm=jpg&fit=crop",
-      "https://images.unsplash.com/photo-1614850715649-1d0106293bd1?w=2000&q=90&fm=jpg&fit=crop",
+      "https://images.unsplash.com/photo-1582651957983-56e9d6062e1c?w=2600&q=95&fit=crop&dpr=2&auto=format",
+      "https://images.unsplash.com/photo-1614850715649-1d0106293bd1?w=2600&q=95&fit=crop&dpr=2&auto=format",
     ],
     locked: true,
   },
@@ -28,8 +28,8 @@ const cities = [
     label: "Hyderabad",
     tagline: "City of Nizams",
     images: [
-      "https://images.unsplash.com/photo-1533461502717-83546f485d24?w=2000&q=90&fm=jpg&fit=crop",
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=2000&q=90&fm=jpg&fit=crop",
+      "https://images.unsplash.com/photo-1533461502717-83546f485d24?w=2600&q=95&fit=crop&dpr=2&auto=format",
+      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=2600&q=95&fit=crop&dpr=2&auto=format",
     ],
     locked: true,
   },
@@ -38,19 +38,19 @@ const cities = [
     label: "Goa",
     tagline: "Pearl of the Orient",
     images: [
-      "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=2000&q=90&fm=jpg&fit=crop",
-      "https://images.unsplash.com/photo-1587922546307-776227941871?w=2000&q=90&fm=jpg&fit=crop",
+      "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=2600&q=95&fit=crop&dpr=2&auto=format",
+      "https://images.unsplash.com/photo-1587922546307-776227941871?w=2600&q=95&fit=crop&dpr=2&auto=format",
     ],
     locked: true,
   },
 ];
 
 const heroImages = [
-  "https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=2400&q=90&fm=jpg&fit=crop", // adventure (hiking/mountain)
-  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=2400&q=90&fm=jpg&fit=crop", // forest & water (waterfall in forest)
-  "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=2400&q=90&fm=jpg&fit=crop", // resort (pool/luxury stay)
-  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=2400&q=90&fm=jpg&fit=crop", // food (spread of dishes)
-  "https://images.unsplash.com/photo-1549366021-9f761d450615?w=2400&q=90&fm=jpg&fit=crop", // animals (wildlife)
+  "https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=3200&q=95&fit=crop&dpr=2&auto=format", // adventure (hiking/mountain)
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=3200&q=95&fit=crop&dpr=2&auto=format", // forest & water (waterfall in forest)
+  "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=3200&q=95&fit=crop&dpr=2&auto=format", // resort (pool/luxury stay)
+  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=3200&q=95&fit=crop&dpr=2&auto=format", // food (spread of dishes)
+  "https://images.unsplash.com/photo-1549366021-9f761d450615?w=3200&q=95&fit=crop&dpr=2&auto=format", // animals (wildlife)
 ];
 
 export default function Home() {

@@ -8,6 +8,17 @@ const categoryToKeyword = {
   Experiences: "wine tour farm stay play arena unique experiences",
 };
 
+const cuisineToKeyword = {
+  "South Indian": "south indian restaurants",
+  "North Indian": "north indian restaurants",
+  "Cafe": "cafes coffee shops",
+  "Brewery": "breweries microbrewery",
+  "Pub & Bar": "pubs bars",
+  "Chinese": "chinese restaurants",
+  "Italian": "italian restaurants",
+  "Continental": "continental restaurants",
+};
+
 function getCategoryEmoji(category) {
   const emojis = {
     Adventure: "🏕️",
@@ -47,10 +58,16 @@ export async function getPlaceDetails(placeId) {
   }
 }
 
-export async function searchPlaces(category, budget, city) {
-  const keyword = categoryToKeyword[category] || "places";
+export async function searchPlaces(category, budget, city, near = false, foodFilters = {}) {
+  let keyword = categoryToKeyword[category] || "places";
+  if (category === "Food") {
+    const { veg, cuisine } = foodFilters;
+    if (cuisine && cuisineToKeyword[cuisine]) keyword = cuisineToKeyword[cuisine];
+    if (veg === "Veg") keyword = "vegetarian " + keyword;
+    else if (veg === "Non-Veg") keyword = "non-vegetarian " + keyword;
+  }
   const location = city || "Bengaluru";
-  const query = keyword + " in " + location;
+  const query = keyword + (near ? " near " : " in ") + location;
 
   try {
     const response = await fetch(
@@ -61,7 +78,10 @@ export async function searchPlaces(category, budget, city) {
     console.log("Places response:", data);
 
     if (data.results && data.results.length > 0) {
-      return data.results.slice(0, 10).map((place) => ({
+      const openPlaces = data.results.filter(
+        (place) => place.business_status !== "CLOSED_PERMANENTLY"
+      );
+      return openPlaces.slice(0, 10).map((place) => ({
         name: place.name,
         type: category,
         category: category,
@@ -71,6 +91,8 @@ export async function searchPlaces(category, budget, city) {
         totalRatings: place.user_ratings_total || 0,
         area: place.vicinity || place.formatted_address || location,
         price: getPriceLabel(place.price_level),
+        lat: place.geometry?.location?.lat ?? null,
+        lng: place.geometry?.location?.lng ?? null,
         photo: place.photos
           ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_KEY}`
           : null,

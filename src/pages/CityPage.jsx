@@ -15,28 +15,28 @@ const cyan = "linear-gradient(to right, #06B6D4, #0891b2)";
 const cityData = {
   Bengaluru: {
     images: [
-      "https://images.unsplash.com/photo-1580667242482-517b21b04b70?w=2000&q=90&fm=jpg&fit=crop", // Vidhana Soudha
-      "https://images.unsplash.com/photo-1580017830165-98fb8112ab98?w=2000&q=90&fm=jpg&fit=crop", // Bangalore Palace
-      "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=2000&q=90&fm=jpg&fit=crop", // Bangalore skyline
-      "https://images.unsplash.com/photo-1600100397608-f7febcf6db86?w=2000&q=90&fm=jpg&fit=crop", // Cubbon Park / Lalbagh greenery
+      "https://images.unsplash.com/photo-1580667242482-517b21b04b70?w=2600&q=95&fit=crop&dpr=2&auto=format", // Vidhana Soudha
+      "https://images.unsplash.com/photo-1580017830165-98fb8112ab98?w=2600&q=95&fit=crop&dpr=2&auto=format", // Bangalore Palace
+      "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=2600&q=95&fit=crop&dpr=2&auto=format", // Bangalore skyline
+      "https://images.unsplash.com/photo-1600100397608-f7febcf6db86?w=2600&q=95&fit=crop&dpr=2&auto=format", // Cubbon Park / Lalbagh greenery
     ],
     tagline: "Silicon Valley of India",
   },
   Chennai: {
     images: [
-      "https://images.unsplash.com/photo-1582651957983-56e9d6062e1c?w=1600&q=80",
+      "https://images.unsplash.com/photo-1582651957983-56e9d6062e1c?w=2200&q=92&fit=crop&dpr=2&auto=format",
     ],
     tagline: "Gateway of South India",
   },
   Hyderabad: {
     images: [
-      "https://images.unsplash.com/photo-1533461502717-83546f485d24?w=1600&q=80",
+      "https://images.unsplash.com/photo-1533461502717-83546f485d24?w=2200&q=92&fit=crop&dpr=2&auto=format",
     ],
     tagline: "City of Nizams",
   },
   Goa: {
     images: [
-      "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1600&q=80",
+      "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=2200&q=92&fit=crop&dpr=2&auto=format",
     ],
     tagline: "Pearl of the Orient",
   },
@@ -427,11 +427,6 @@ function PlaceCard({ place, isSpinResult, onReview, onSpin, onGallery }) {
           </div>
         </button>
       </div>
-      {isSpinResult && (
-        <div className="px-4 pb-4">
-          <button onClick={onSpin} className="w-full py-2.5 rounded-xl text-white text-sm font-bold opacity-60" style={{ background: "rgba(255,255,255,0.08)" }}>Spin Again</button>
-        </div>
-      )}
     </div>
   );
 }
@@ -445,7 +440,9 @@ export default function CityPage() {
   const [currentImage, setCurrentImage] = useState(0);
   const [fade, setFade] = useState(true);
   const [mode, setMode] = useState("spin");
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [foodVeg, setFoodVeg] = useState(null);
+  const [foodCuisine, setFoodCuisine] = useState(null);
   const [selectedBudget, setSelectedBudget] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState("Anywhere in Bangalore");
   const [results, setResults] = useState([]);
@@ -495,33 +492,148 @@ export default function CityPage() {
   const pillBase = "px-4 py-2 rounded-full text-sm font-semibold transition-all border border-white border-opacity-10 text-white opacity-60 bg-white bg-opacity-10";
   const pillActive = "px-4 py-2 rounded-full text-sm font-semibold transition-all text-white";
 
+  const distanceKm = (lat1, lng1, lat2, lng2) => {
+    if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return Infinity;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  // Tries the place area first, then a broader "near <area>" search, then the whole city.
+  // Returns { list, forced } where `forced` is the single most-famous pick when the
+  // category didn't exist locally and we had to widen the search.
+  const getCategoryCandidates = async (cat, budget, searchCity, cityWide, foodFilters) => {
+    const local = await searchPlaces(cat, budget, searchCity, false, foodFilters);
+    if (local.length > 0) return { list: local, forced: null };
+
+    const near = await searchPlaces(cat, budget, searchCity, true, foodFilters);
+    if (near.length > 0) {
+      const famous = [...near].sort((a, b) => (b.rating * (b.totalRatings || 1)) - (a.rating * (a.totalRatings || 1)))[0];
+      return { list: near, forced: famous };
+    }
+
+    const cityList = await searchPlaces(cat, budget, cityWide, false, foodFilters);
+    if (cityList.length > 0) {
+      const famous = [...cityList].sort((a, b) => (b.rating * (b.totalRatings || 1)) - (a.rating * (a.totalRatings || 1)))[0];
+      return { list: cityList, forced: famous };
+    }
+    return { list: [], forced: null };
+  };
+
   const handleFind = async () => {
     setSearched(true); setSpinResult(null); setResults([]); setLoading(true);
     try {
       const searchCity = selectedLocation === "Anywhere in Bangalore" ? cityName : selectedLocation + " " + cityName;
-      const data = await searchPlaces(selectedCategory, selectedBudget, searchCity);
-      setResults(data);
+      const foodFilters = { veg: foodVeg, cuisine: foodCuisine };
+      if (selectedCategories.length > 1) {
+        const lists = await Promise.all(selectedCategories.map((cat) => searchPlaces(cat, selectedBudget, searchCity, false, foodFilters)));
+        const combined = lists.flat().sort(() => Math.random() - 0.5);
+        setResults(combined);
+      } else {
+        const data = await searchPlaces(selectedCategories[0] || null, selectedBudget, searchCity, false, foodFilters);
+        setResults(data);
+      }
     } catch (e) { setResults([]); } finally { setLoading(false); }
   };
 
   const handleSpin = async () => {
-    setSpinning(true); setSpinResult(null); setSearched(false); setResults([]);
+    setSpinning(true); setSpinResult(null); setSearched(false); setResults([]); setSelectedPlan(null);
     try {
-      const cats = ["Food", "Nature", "Adventure", "Heritage", "Spiritual", "Entertainment", "Experiences"];
-      const randomCat = selectedCategory || cats[Math.floor(Math.random() * cats.length)];
       const searchCity = selectedLocation === "Anywhere in Bangalore" ? cityName : selectedLocation + " " + cityName;
-      const data = await searchPlaces(randomCat, selectedBudget, searchCity);
-      if (data.length > 0) {
-        const random = data[Math.floor(Math.random() * data.length)];
+      const areaLabel = selectedLocation === "Anywhere in Bangalore" ? cityName : selectedLocation;
+      const foodFilters = { veg: foodVeg, cuisine: foodCuisine };
+
+      if (selectedCategories.length >= 2) {
+        const categoryResults = await Promise.all(
+          selectedCategories.map((cat) => getCategoryCandidates(cat, selectedBudget, searchCity, cityName, foodFilters))
+        );
+        const usable = categoryResults.map((r, i) => ({ ...r, cat: selectedCategories[i] })).filter((r) => r.list.length > 0);
+
+        if (usable.length >= 2) {
+          const forcedAnchors = usable.filter((r) => r.forced).map((r) => r.forced);
+          let chosen;
+
+          if (forcedAnchors.length > 0) {
+            // At least one category doesn't exist in this area — anchor everything
+            // around the nearest famous option(s), and pick the rest close to them.
+            chosen = usable.map((r) => {
+              if (r.forced) return r.forced;
+              const sorted = [...r.list].sort((a, b) => {
+                const da = Math.min(...forcedAnchors.map((f) => distanceKm(f.lat, f.lng, a.lat, a.lng)));
+                const db = Math.min(...forcedAnchors.map((f) => distanceKm(f.lat, f.lng, b.lat, b.lng)));
+                return da - db;
+              });
+              return sorted[0];
+            });
+          } else {
+            // Everything exists locally — pick a fun random top-rated seed, then
+            // chain the rest by proximity to what's already been picked.
+            const topSeed = [...usable[0].list].sort((a, b) => b.rating - a.rating).slice(0, 5);
+            chosen = [topSeed[Math.floor(Math.random() * topSeed.length)]];
+            for (let i = 1; i < usable.length; i++) {
+              const sorted = [...usable[i].list].sort((a, b) => {
+                const da = Math.min(...chosen.map((c) => distanceKm(c.lat, c.lng, a.lat, a.lng)));
+                const db = Math.min(...chosen.map((c) => distanceKm(c.lat, c.lng, b.lat, b.lng)));
+                return da - db;
+              });
+              chosen.push(sorted[0]);
+            }
+          }
+
+          const startHour = 10;
+          const timeLabels = chosen.map((_, i) => {
+            const hour24 = startHour + i * 2;
+            const hour12 = ((hour24 + 11) % 12) + 1;
+            const suffix = hour24 % 24 < 12 ? "AM" : "PM";
+            return `${hour12}:00 ${suffix}`;
+          });
+
+          const stops = chosen.map((place, i) => {
+            const wasForced = forcedAnchors.includes(place);
+            return {
+              time: timeLabels[i],
+              place: place.name,
+              type: place.category,
+              note: `${place.rating}★ (${place.totalRatings}) · ${place.area}${wasForced ? ` · Closest great option outside ${areaLabel}` : ""}`,
+              cost: place.price,
+            };
+          });
+
+          setSelectedPlan({
+            id: `spin-${Date.now()}`,
+            title: "Your Custom Spin Plan",
+            emoji: "🎲",
+            tagline: forcedAnchors.length > 0
+              ? `${selectedCategories.join(" + ")} spots — built around the closest options near ${areaLabel}`
+              : `${selectedCategories.join(" + ")} spots picked close to each other`,
+            color: "#06B6D4",
+            budget: selectedBudget || "Mixed budget",
+            stops,
+          });
+          setSpinning(false);
+          return;
+        }
+      }
+
+      const cats = ["Food", "Nature", "Adventure", "Heritage", "Spiritual", "Entertainment", "Experiences"];
+      const randomCat = selectedCategories[0] || cats[Math.floor(Math.random() * cats.length)];
+      const { list, forced } = await getCategoryCandidates(randomCat, selectedBudget, searchCity, cityName, foodFilters);
+      if (forced) {
+        setSpinResult({ ...forced, category: randomCat, type: randomCat, area: `${forced.area} · Closest option outside ${areaLabel}` });
+      } else if (list.length > 0) {
+        const random = list[Math.floor(Math.random() * list.length)];
         setSpinResult({ ...random, category: randomCat, type: randomCat });
       }
     } catch (e) {} finally { setSpinning(false); }
   };
 
   const handleReset = () => {
-    setSelectedCategory(null); setSelectedBudget(null);
+    setSelectedCategories([]); setSelectedBudget(null);
+    setFoodVeg(null); setFoodCuisine(null);
     setSelectedLocation("Anywhere in Bangalore");
-    setResults([]); setSearched(false); setSpinResult(null);
+    setResults([]); setSearched(false); setSpinResult(null); setSelectedPlan(null);
   };
 
   return (
@@ -617,15 +729,77 @@ export default function CityPage() {
             )}
 
             <div className="rounded-2xl p-4 mb-3" style={glassCard}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#06B6D4" }}>Where do you want to go?</p>
-              <div className="flex gap-2 flex-wrap">
-                {categories.map((cat) => (
-                  <button key={cat.label} onClick={() => setSelectedCategory(selectedCategory === cat.label ? null : cat.label)} className={selectedCategory === cat.label ? pillActive : pillBase} style={selectedCategory === cat.label ? { background: blue } : {}}>
-                    {cat.emoji} {cat.label}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#06B6D4" }}>Where do you want to go?</p>
+                <p className="text-white opacity-40 text-xs font-medium">Pick 1-3</p>
               </div>
+              <div className="flex gap-2 flex-wrap">
+                {categories.map((cat) => {
+                  const isSelected = selectedCategories.includes(cat.label);
+                  const atLimit = selectedCategories.length >= 3 && !isSelected;
+                  return (
+                    <button
+                      key={cat.label}
+                      disabled={atLimit}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedCategories(selectedCategories.filter((c) => c !== cat.label));
+                          if (cat.label === "Food") { setFoodVeg(null); setFoodCuisine(null); }
+                        } else if (selectedCategories.length < 3) {
+                          setSelectedCategories([...selectedCategories, cat.label]);
+                        }
+                      }}
+                      className={isSelected ? pillActive : pillBase}
+                      style={{ ...(isSelected ? { background: blue } : {}), opacity: atLimit ? 0.3 : undefined }}
+                    >
+                      {cat.emoji} {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedCategories.length >= 2 && (
+                <p className="text-white opacity-50 text-xs font-medium mt-3">✨ Spin will build you a plan with these picked close together</p>
+              )}
             </div>
+
+            {selectedCategories.includes("Food") && (
+              <div className="rounded-2xl p-4 mb-3" style={glassCard}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#06B6D4" }}>Food Preferences</p>
+
+                <p className="text-white opacity-60 text-xs font-semibold mb-2">Veg / Non-Veg</p>
+                <div className="flex gap-2 flex-wrap mb-4">
+                  {["Veg", "Non-Veg"].map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setFoodVeg(foodVeg === v ? null : v)}
+                      className={foodVeg === v ? pillActive : pillBase}
+                      style={foodVeg === v ? { background: blue } : {}}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-white opacity-60 text-xs font-semibold mb-2">Cuisine</p>
+                <div className="flex gap-2 flex-wrap">
+                  {["South Indian", "North Indian", "Cafe", "Brewery", "Pub & Bar"].map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setFoodCuisine(foodCuisine === c ? null : c)}
+                      className={foodCuisine === c ? pillActive : pillBase}
+                      style={foodCuisine === c ? { background: blue } : {}}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                  {["Chinese", "Italian", "Continental"].map((c) => (
+                    <button key={c} disabled className={pillBase} style={{ opacity: 0.35, cursor: "not-allowed" }}>
+                      {c} <span className="ml-1 opacity-80">🔒 Soon</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-2xl p-4 mb-5" style={glassCard}>
               <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#06B6D4" }}>Budget</p>
