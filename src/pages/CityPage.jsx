@@ -466,13 +466,13 @@ export default function CityPage() {
   }, [city.images.length]);
 
   const categories = [
-    { label: "Adventure", emoji: "🏕️" },
     { label: "Nature", emoji: "🌿" },
-    { label: "Spiritual", emoji: "🛕" },
     { label: "Food", emoji: "🍽️" },
     { label: "Heritage", emoji: "🏛️" },
-    { label: "Entertainment", emoji: "🎮" },
     { label: "Experiences", emoji: "🍷" },
+    { label: "Adventure", emoji: "🏕️", locked: true },
+    { label: "Spiritual", emoji: "🛕", locked: true },
+    { label: "Entertainment", emoji: "🎮", locked: true },
   ];
 
   const budgets = ["Under 1000", "1000-2500", "2500+"];
@@ -617,7 +617,7 @@ export default function CityPage() {
         }
       }
 
-      const cats = ["Food", "Nature", "Adventure", "Heritage", "Spiritual", "Entertainment", "Experiences"];
+      const cats = ["Food", "Nature", "Heritage", "Experiences"];
       const randomCat = selectedCategories[0] || cats[Math.floor(Math.random() * cats.length)];
       const { list, forced } = await getCategoryCandidates(randomCat, selectedBudget, searchCity, cityName, foodFilters);
       if (forced) {
@@ -737,11 +737,13 @@ export default function CityPage() {
                 {categories.map((cat) => {
                   const isSelected = selectedCategories.includes(cat.label);
                   const atLimit = selectedCategories.length >= 3 && !isSelected;
+                  const disabled = cat.locked || atLimit;
                   return (
                     <button
                       key={cat.label}
-                      disabled={atLimit}
+                      disabled={disabled}
                       onClick={() => {
+                        if (cat.locked) return;
                         if (isSelected) {
                           setSelectedCategories(selectedCategories.filter((c) => c !== cat.label));
                           if (cat.label === "Food") { setFoodVeg(null); setFoodCuisine(null); }
@@ -750,9 +752,9 @@ export default function CityPage() {
                         }
                       }}
                       className={isSelected ? pillActive : pillBase}
-                      style={{ ...(isSelected ? { background: blue } : {}), opacity: atLimit ? 0.3 : undefined }}
+                      style={{ ...(isSelected ? { background: blue } : {}), opacity: cat.locked ? 0.35 : (atLimit ? 0.3 : undefined), cursor: cat.locked ? "not-allowed" : undefined }}
                     >
-                      {cat.emoji} {cat.label}
+                      {cat.emoji} {cat.label}{cat.locked ? " 🔒 Soon" : ""}
                     </button>
                   );
                 })}

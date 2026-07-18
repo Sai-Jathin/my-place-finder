@@ -57,7 +57,6 @@ export default function Home() {
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
   const [fade, setFade] = useState(true);
-  const [citySearch, setCitySearch] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -110,30 +109,8 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* Search Bar */}
-        <div className="px-4 pt-10 sm:pt-14">
-          <div className="max-w-2xl mx-auto relative">
-            <input
-              type="text"
-              value={citySearch}
-              onChange={(e) => setCitySearch(e.target.value)}
-              placeholder="Search your city"
-              className="w-full bg-white rounded-full py-5 sm:py-6 pl-8 pr-16 text-gray-800 placeholder-gray-400 text-base sm:text-lg outline-none shadow-lg"
-            />
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-900 text-white w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-all"
-              aria-label="Search"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
         {/* Hero Text */}
-        <div className="text-center px-4 pt-10 sm:pt-14 pb-12 sm:pb-20">
+        <div className="text-center px-4 pt-16 sm:pt-24 pb-12 sm:pb-20">
           <h1 className="text-6xl sm:text-8xl font-black text-white mb-6 leading-tight">
             Find your<br />
             <span style={{ color: "#06B6D4" }}>Perfect spot</span>
