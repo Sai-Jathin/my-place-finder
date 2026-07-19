@@ -71,7 +71,7 @@ const shapePlace = (place, category, budget, location) => ({
   lat: place.geometry?.location?.lat ?? null,
   lng: place.geometry?.location?.lng ?? null,
   photo: place.photos
-    ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_KEY}`
+    ? `${BASE_URL}?type=photo&query=${place.photos[0].photo_reference}`
     : null,
   placeId: place.place_id,
   mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}`,

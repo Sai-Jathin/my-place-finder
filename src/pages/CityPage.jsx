@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { searchPlaces, getPlaceDetails, getPlacePhoto, getPlacePhotos } from "../services/places";
+import { useAuth } from "../context/AuthContext";
 
 const glassCard = {
   background: "rgba(255,255,255,0.05)",
@@ -322,12 +323,6 @@ function PlanModal({ plan, onClose }) {
   }, [plan.id]);
 
   const validStops = plan.stops.filter((s) => stopData[s.place]?.lat);
-  const allLats = validStops.map(s => stopData[s.place].lat);
-  const allLngs = validStops.map(s => stopData[s.place].lng);
-  const avgLat = allLats.length > 0 ? allLats.reduce((a, b) => a + b, 0) / allLats.length : 12.9716;
-  const avgLng = allLngs.length > 0 ? allLngs.reduce((a, b) => a + b, 0) / allLngs.length : 77.5946;
-  const markerParams = validStops.map((s, i) => `markers=color:0x2563EB%7Clabel:${i + 1}%7C${stopData[s.place].lat},${stopData[s.place].lng}`).join("&");
-  const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${avgLat},${avgLng}&zoom=13&size=600x300&maptype=roadmap&${markerParams}&path=color:0x2563EB80%7Cweight:3%7C${validStops.map(s => `${stopData[s.place].lat},${stopData[s.place].lng}`).join("%7C")}&key=${process.env.REACT_APP_GOOGLE_PLACES_KEY}`;
   const routeUrl = validStops.length > 0 ? `https://www.google.com/maps/dir/${validStops.map(s => `${stopData[s.place].lat},${stopData[s.place].lng}`).join("/")}` : "https://www.google.com/maps";
 
   return (
@@ -387,10 +382,7 @@ function PlanModal({ plan, onClose }) {
               <p className="text-white opacity-50 text-xs">All {plan.stops.length} stops</p>
             </div>
             {!loadingPhotos && validStops.length > 0 ? (
-              <div>
-                <img src={staticMapUrl} alt="Route map" className="w-full" />
-                <button onClick={() => window.open(routeUrl, "_blank")} className="w-full py-3 text-white font-bold text-sm" style={{ background: `${plan.color}30` }}>Open Full Route in Google Maps</button>
-              </div>
+              <button onClick={() => window.open(routeUrl, "_blank")} className="w-full py-3 text-white font-bold text-sm" style={{ background: `${plan.color}30` }}>Open Full Route in Google Maps</button>
             ) : (
               <div className="p-8 text-center"><p className="text-white opacity-40 text-sm">{loadingPhotos ? "Loading map..." : "Map unavailable"}</p></div>
             )}
@@ -434,6 +426,7 @@ function PlaceCard({ place, isSpinResult, onReview, onSpin, onGallery }) {
 export default function CityPage() {
   const { cityName } = useParams();
   const navigate = useNavigate();
+  const { user, authLoading, login, logout } = useAuth();
   const city = cityData[cityName] || cityData.Bengaluru;
   const plans = cityPlans[cityName] || [];
 
@@ -639,6 +632,39 @@ export default function CityPage() {
   return (
     <div className="min-h-screen" style={{ background: "#0F172A" }}>
 
+      {/* Navbar */}
+      <nav className="relative flex items-center justify-between px-4 sm:px-12 py-3 sm:py-5 bg-white">
+        <button onClick={() => navigate("/")} className="text-black font-medium text-sm sm:text-lg hover:opacity-60 transition-opacity whitespace-nowrap">
+          ← Back
+        </button>
+        <span className="absolute left-1/2 -translate-x-1/2 text-black font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap">
+          Just Spin
+        </span>
+        {authLoading ? null : user ? (
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 bg-black text-white font-bold text-xs sm:text-base px-3 sm:px-4 py-2 sm:py-2.5 rounded-full hover:opacity-80 transition-all whitespace-nowrap"
+            title="Click to log out"
+          >
+            {user.photoURL ? (
+              <img src={user.photoURL} alt={user.displayName || "User"} className="w-6 h-6 sm:w-7 sm:h-7 rounded-full" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs">
+                {(user.displayName || user.email || "U")[0].toUpperCase()}
+              </span>
+            )}
+            <span className="hidden sm:inline">{user.displayName?.split(" ")[0] || "Account"}</span>
+          </button>
+        ) : (
+          <button
+            onClick={login}
+            className="bg-black text-white font-bold text-xs sm:text-base px-4 sm:px-6 py-2 sm:py-2.5 rounded-full hover:opacity-80 transition-all whitespace-nowrap"
+          >
+            Sign in
+          </button>
+        )}
+      </nav>
+
       {/* Hero */}
       <div className="relative" style={{ height: "40vh", minHeight: "280px" }}>
         <div
@@ -647,22 +673,9 @@ export default function CityPage() {
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(15,23,42,1) 100%)" }} />
 
-        {/* Top nav - matches Home page layout */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 sm:px-12 py-5 z-10">
-          <button onClick={() => navigate("/")} className="text-white opacity-80 hover:opacity-100 text-base sm:text-lg font-medium transition-all whitespace-nowrap">
-            ← Back
-          </button>
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-            <span className="text-white font-black text-3xl sm:text-2xl tracking-tight whitespace-nowrap">JustSpin</span>
-          </div>
-          <button className="bg-white text-gray-900 font-bold text-sm sm:text-base px-3 sm:px-5 py-2 sm:py-2.5 rounded-full hover:shadow-lg transition-all whitespace-nowrap">
-            Sign up
-          </button>
-        </div>
-
         {/* City name overlay */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-6 z-10">
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-1">{cityName}</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-1">{cityName}</h1>
           <p className="text-white opacity-60 text-sm">{city.tagline}</p>
         </div>
 

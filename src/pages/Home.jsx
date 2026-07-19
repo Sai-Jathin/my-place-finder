@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const cities = [
   {
@@ -55,6 +56,7 @@ const heroImages = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user, authLoading, login, logout } = useAuth();
   const [currentImage, setCurrentImage] = useState(0);
   const [fade, setFade] = useState(true);
 
@@ -93,25 +95,46 @@ export default function Home() {
       <div className="relative z-10">
 
         {/* Navbar */}
-        <nav className="flex items-center justify-between px-6 sm:px-12 py-5">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl sm:text-4xl">📍</span>
-            <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">JustSpin</span>
-          </div>
-          <div className="flex items-center gap-4 sm:gap-8">
-            <button className="text-white opacity-80 hover:opacity-100 text-base sm:text-lg font-medium hidden sm:block transition-all">About</button>
-            <button className="text-white opacity-80 hover:opacity-100 text-base sm:text-lg font-medium hidden sm:block transition-all">Cities</button>
-            <button
-              className="bg-white text-gray-900 font-bold text-base sm:text-lg px-6 sm:px-7 py-2.5 sm:py-3 rounded-full hover:shadow-lg transition-all"
-            >
-              Sign up
+        <nav className="flex items-center justify-between px-6 sm:px-12 py-5 bg-white">
+          <span className="text-black font-black text-xl sm:text-2xl uppercase tracking-[0.15em]">
+            Just Spin
+          </span>
+          <div className="flex items-center gap-5 sm:gap-6">
+            <button aria-label="Search" className="text-black hover:opacity-60 transition-opacity">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
             </button>
+            {authLoading ? null : user ? (
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 bg-black text-white font-bold text-xs sm:text-base px-3 sm:px-4 py-2 sm:py-2.5 rounded-full hover:opacity-80 transition-all"
+                title="Click to log out"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || "User"} className="w-6 h-6 sm:w-7 sm:h-7 rounded-full" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs">
+                    {(user.displayName || user.email || "U")[0].toUpperCase()}
+                  </span>
+                )}
+                <span className="hidden sm:inline">{user.displayName?.split(" ")[0] || "Account"}</span>
+              </button>
+            ) : (
+              <button
+                onClick={login}
+                className="bg-black text-white font-bold text-xs sm:text-base px-4 sm:px-6 py-2 sm:py-2.5 rounded-full hover:opacity-80 transition-all"
+              >
+                Login
+              </button>
+            )}
           </div>
         </nav>
 
         {/* Hero Text */}
-        <div className="text-center px-4 pt-16 sm:pt-24 pb-12 sm:pb-20">
-          <h1 className="text-6xl sm:text-8xl font-black text-white mb-6 leading-tight">
+        <div className="text-center px-4 pt-10 sm:pt-16 md:pt-24 pb-8 sm:pb-12 md:pb-20">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white mb-4 sm:mb-6 leading-tight">
             Find your<br />
             <span style={{ color: "#06B6D4" }}>Perfect spot</span>
           </h1>
